@@ -1,0 +1,28 @@
+{
+  "id": "miskas-scene-utils",
+  "title": "Miska's Maps Scene Utils",
+  "description": "<p>Utilities for Miska's Maps scene modules</p>",
+  "version": "0.1",
+  "compatibility": {
+    "verified": "12"
+  },
+  "authors": [
+    {
+      "name": "Miska's Maps",
+      "url": "https://www.miskasmaps.com",
+      "flags": {}
+    },
+    {
+      "name": "Eliot Fredman",
+      "email": "eliot.fredman@gmail.com",
+      "discord": "elmlortti",
+      "flags": {}
+    }
+  ],
+  "esmodules": [
+	 "scripts/main.js"
+  ],
+  "url": "https://www.miskasmaps.com",
+  "manifest": "https://dl.dropboxusercontent.com/scl/...",
+  "download": "https://dl.dropboxusercontent.com/scl/..."
+}
