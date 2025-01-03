@@ -10,12 +10,10 @@ export class RegionGroup {
 
 		this.ids = [];
 		this.regions = {};
-		console.log(this.regions);
 		this.scene = scene;
 
 		let sceneId;
 		for (const uuid of uuids) {
-			console.log(uuid);
 			const resolved = foundry.utils.parseUuid(uuid);
 			sceneId = sceneId || resolved.primaryId;
 
@@ -233,7 +231,6 @@ export async function prompt(
 
 export async function insertRegion(uuid, group = "default", index) {
 	const region = await fromUuid(uuid);
-	console.log(region);
 	const scene = region.parent;
 	const regionGroup = scene.getFlag(MODULE_NAME, `teleporters.${group}`);
 
