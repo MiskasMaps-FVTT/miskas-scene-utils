@@ -2,7 +2,7 @@
   "id": "miskas-scene-utils",
   "title": "Miska's Maps Scene Utils",
   "description": "<p>Utilities for Miska's Maps scene modules</p>",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "compatibility": {
 	 "minimum": "12",
     "verified": "12"
