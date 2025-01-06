@@ -124,46 +124,54 @@ function generatePromptData(group, options) {
 	const data = { content: "", buttons: [] };
 	group = options.scene.getFlag(MODULE_NAME, "teleporters")[group];
 	if (options.mode === "ladder") {
-		if (group.regionUuids.length <= 1) {
+		if (group.ids.length <= 1) {
 			throw new Error(
 				"Group must have more than one region for the ladder mode to function",
 			);
 		}
 
-		const curr = group.uuids.indexOf(options.regionUuid);
-		let prev = undefined;
-		if (curr > 0) prev = curr - 1;
-		const next = curr + 1;
+		const curr = group.ids.indexOf(options.region.id);
+		const prev = group.ids[curr - 1];
+		const next = group.ids[curr + 1];
+		let content = "Would you like to go ";
 
 		if (prev) {
 			data.buttons.push({
-				action: "choice",
+				action: "up",
 				label: "Up",
 				callback: (group) => {
-					return group.regions.get(group.regionUuids[prev]);
+					return prev;
 				},
 			});
+			content += `up to ${group.regions[prev].name}`
 		}
+
+		if (prev && next) content += " or ";
 
 		if (next) {
 			data.buttons.push({
-				action: "choice",
+				action: "down",
 				label: "Down",
 				callback: (group) => {
-					return group.regions.get(group.regionUuids[next]);
+					return next;
 				},
 			});
+			content += `down to ${group.regions[next].name}`
 		}
+
+		content += "?";
+		if (options.content === undefined) options.content = content;
 	} else {
+		options.content = options.content || "<p>Where would you like to go?</p>";
 		const regionList = group.ids;
 
 		data.buttons = [{
-			action: "choice",
+			action: "confirm",
 			label: "Confirm",
 			callback: (event, button, dialog) => button.form.elements.choice.value,
 		}, {
-			action: "cancel",
-			label: "Cancel",
+			action: "close",
+			label: "Close",
 			default: true,
 		}];
 
@@ -206,13 +214,23 @@ export async function prompt(
 	region,
 	event,
 	group,
-	options = {
-		title: "Teleporter",
-		content: "<p>Where would you like to go?</p>",
-		mode: "elevator",
-		tokenOffset: undefined,
-	},
+	{
+		title = "Teleporter",
+		content,
+		mode,
+		tokenOffset,
+	} = {},
 ) {
+	const options = {
+		title: mode == "elevator"
+			? "Elevator"
+			: mode == "ladder"
+			? "Ladder"
+			: title,
+		content: content,
+		mode: mode || "elevator",
+		tokenOffset: tokenOffset,
+	};
 	if (!group) throw new Error("Group must be provided");
 	options.region = region;
 	options.scene = region.parent;
@@ -220,8 +238,13 @@ export async function prompt(
 		throw new Error(`"${group}" is not a valid group in the scene`);
 	}
 	const targetId = await promptTargetRegion(event, group, options);
+	try {
 	const target = await fromUuid(options.scene.uuid + ".Region." + targetId);
 	if (target) moveTokens(region, target);
+	}
+	catch (err) {
+		// Do nothing
+	}
 }
 
 export async function insertRegion(uuid, group = "default", index) {
@@ -254,4 +277,3 @@ export function clearRegions({ group, scene = canvas.scene }) {
 		scene.unsetFlag(MODULE_NAME, "teleporters");
 	}
 }
-
