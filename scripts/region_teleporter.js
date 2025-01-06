@@ -1,7 +1,7 @@
 import { MODULE_NAME } from "./const.js";
 
 export class RegionGroup {
-	constructor(uuids = [], name, scene) {
+	constructor(uuids = [], name) {
 		if (!name) throw new Error("Name is required");
 
 		if (!Array.isArray(uuids)) {
@@ -28,6 +28,8 @@ export class RegionGroup {
 			this.ids.push(resolved.id);
 			this.regions[resolved.id] = region;
 		}
+
+		this.ids = [...new Set(this.ids)];
 	}
 
 	insert({ uuid, region, index } = {}) {
@@ -35,13 +37,17 @@ export class RegionGroup {
 			throw new Error("UUID and/or reference to region is required");
 		}
 		uuid = uuid || region.uuid;
+		const id = foundry.utils.parseUuid(uuid).id;
+
+		if (this.ids.includes(id)) {
+			throw new Error("Only one instance of each region is allowed");
+		}
+
 		region = region || fromUuidSync(uuid);
 
 		if (region.parent != this.scene) {
 			throw new Error("Region must be in the same scene as the group");
 		}
-
-		const id = foundry.utils.parseUuid(uuid).id;
 
 		if (!index || index >= this.regions.length) {
 			this.regions[id] = region;
@@ -115,8 +121,8 @@ export class RegionGroup {
 }
 
 function generatePromptData(group, options) {
-	let data;
-	const regionList = [];
+	const data = { content: "", buttons: [] };
+	group = options.scene.getFlag(MODULE_NAME, "teleporters")[group];
 	if (options.mode === "ladder") {
 		if (group.regionUuids.length <= 1) {
 			throw new Error(
@@ -129,8 +135,6 @@ function generatePromptData(group, options) {
 		if (curr > 0) prev = curr - 1;
 		const next = curr + 1;
 
-		data.content = "";
-		data.buttons = [];
 		if (prev) {
 			data.buttons.push({
 				action: "choice",
@@ -151,10 +155,7 @@ function generatePromptData(group, options) {
 			});
 		}
 	} else {
-		regionList = options.scene.getFlag(
-			MODULE_NAME,
-			`teleporters${group}`,
-		);
+		const regionList = group.ids;
 
 		data.buttons = [{
 			action: "choice",
@@ -166,11 +167,10 @@ function generatePromptData(group, options) {
 			default: true,
 		}];
 
-		if (regionList) {
-			for (const uuid of regionList) {
-				data.content +=
-					`<label><input type="radio" name="choice" value="${uuid}" checked> ${options.region.name}</label>`;
-			}
+		for (const id of regionList) {
+			const region = group.regions[id];
+			data.content +=
+				`<label><input type="radio" name="choice" value="${id}" checked> ${region.name}</label>`;
 		}
 	}
 
@@ -188,23 +188,17 @@ function moveTokens(currentRegion, targetRegion) {
 	}
 }
 
-function promptTargetRegion(event, regionGroup, options) {
+async function promptTargetRegion(event, group, options) {
 	if (!event.data.token.isOwner) {
 		return Promise.resolve(false);
 	}
 
-	const data = generatePromptData(regionGroup, options);
+	const data = generatePromptData(group, options);
 
-	return new Promise((resolve) => {
-		new foundry.applications.api.DialogV2({
-			window: { title: options.title },
-			content: options.content + data.content,
-			buttons: data.buttons,
-			submit: (result) => {
-				if (result == "cancel") resolve(undefined);
-				else (() => resolve(result));
-			},
-		}).render({ force: true });
+	return await foundry.applications.api.DialogV2.wait({
+		window: { title: options.title },
+		content: options.content + data.content,
+		buttons: data.buttons,
 	});
 }
 
@@ -220,25 +214,26 @@ export async function prompt(
 	},
 ) {
 	if (!group) throw new Error("Group must be provided");
+	options.region = region;
 	options.scene = region.parent;
-	if (!(group in options.scene.flags[MODULE_NAME])) {
+	if (!(group in options.scene.flags[MODULE_NAME].teleporters)) {
 		throw new Error(`"${group}" is not a valid group in the scene`);
 	}
-	options.regionUuid = region;
-	const target = await promptTargetRegion(event, options);
+	const targetId = await promptTargetRegion(event, group, options);
+	const target = await fromUuid(options.scene.uuid + ".Region." + targetId);
 	if (target) moveTokens(region, target);
 }
 
 export async function insertRegion(uuid, group = "default", index) {
 	const region = await fromUuid(uuid);
 	const scene = region.parent;
-	const regionGroup = scene.getFlag(MODULE_NAME, `teleporters.${group}`);
+	const regionGroup = scene.getFlag(MODULE_NAME, "teleporters")[group];
 
 	if (!regionGroup) {
 		scene.setFlag(
 			MODULE_NAME,
-			`teleporters.${group}`,
-			new RegionGroup(uuid, group, scene),
+			"teleporters",
+			{ [group]: new RegionGroup(uuid, group, scene) },
 		);
 	} else {
 		regionGroup.insert({ region: region, index: index });
@@ -246,16 +241,17 @@ export async function insertRegion(uuid, group = "default", index) {
 }
 
 export function removeRegion(regionUuid, group = "default", index) {
-	scene.getFlag(MODULE_NAME, `teleporters.${group}`).remove({
+	scene.getFlag(MODULE_NAME, "teleporters")[group].remove({
 		uuid: regionUuid,
 		index: index,
 	});
 }
 
-export function clearRegions({ group, scene = game.scenes.active }) {
+export function clearRegions({ group, scene = canvas.scene }) {
 	if (group) {
-		scene.unsetFlag(MODULE_NAME, `teleporters.${group}`);
+		scene.unsetFlag(MODULE_NAME, "teleporters")[group];
 	} else {
 		scene.unsetFlag(MODULE_NAME, "teleporters");
 	}
 }
+
