@@ -1,7 +1,9 @@
-import { clearRegions, prompt, insertRegion, removeRegion, } from "./region_teleporter.js";
+import { clearRegions, prompt, insertRegion, removeRegion, RegionGroup } from "./region_teleporter.js";
 
 Hooks.on("init", () => {
-	CONFIG.sceneutils = CONFIG.sceneutils || {};
+	CONFIG.sceneutils = {
+		RegionGroup,
+	};
 
 	CONFIG.sceneutils.teleporter = {
 		prompt,
