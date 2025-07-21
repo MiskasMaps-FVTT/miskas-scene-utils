@@ -143,7 +143,7 @@ function generatePromptData(group, options) {
 					return prev;
 				},
 			});
-			content += `up to ${group.regions[prev].name}`
+			content += `up to ${group.regions[prev].name}`;
 		}
 
 		if (prev && next) content += " or ";
@@ -156,7 +156,7 @@ function generatePromptData(group, options) {
 					return next;
 				},
 			});
-			content += `down to ${group.regions[next].name}`
+			content += `down to ${group.regions[next].name}`;
 		}
 
 		content += "?";
@@ -185,13 +185,15 @@ function generatePromptData(group, options) {
 	return data;
 }
 
-function moveTokens(currentRegion, targetRegion) {
+function teleportTokens(currentRegion, targetRegion) {
 	for (const token of currentRegion.tokens) {
-		if (token.isOwner && canvas.tokens.controlled.indexOf(token) != 1) {
+		if (token.isOwner) {
 			token.update({
 				x: token.x - currentRegion.x + targetRegion.x,
 				y: token.y - currentRegion.y + targetRegion.y,
-			}, { animate: false });
+			}, {
+				teleport: true,
+			});
 		}
 	}
 }
@@ -225,8 +227,8 @@ export async function prompt(
 		title: mode == "elevator"
 			? "Elevator"
 			: mode == "ladder"
-			? "Ladder"
-			: title,
+				? "Ladder"
+				: title,
 		content: content,
 		mode: mode || "elevator",
 		tokenOffset: tokenOffset,
@@ -239,10 +241,9 @@ export async function prompt(
 	}
 	const targetId = await promptTargetRegion(event, group, options);
 	try {
-	const target = await fromUuid(options.scene.uuid + ".Region." + targetId);
-	if (target) moveTokens(region, target);
-	}
-	catch (err) {
+		const target = await fromUuid(options.scene.uuid + ".Region." + targetId);
+		if (target) teleportTokens(region, target);
+	} catch (err) {
 		// Do nothing
 	}
 }

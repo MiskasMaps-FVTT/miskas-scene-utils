@@ -2,10 +2,10 @@
   "id": "miskas-scene-utils",
   "title": "Miska's Maps Scene Utils",
   "description": "<p>Utilities for Miska's Maps scene modules</p>",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "compatibility": {
 	 "minimum": "12",
-    "verified": "12"
+    "verified": "13"
   },
   "authors": [
     {
@@ -25,5 +25,5 @@
   ],
   "url": "https://www.miskasmaps.com",
   "manifest": "https://github.com/MiskasMaps-FVTT/miskas-scene-utils/releases/latest/download/module.json",
-  "download": "https://github.com/MiskasMaps-FVTT/miskas-scene-utils/archive/0.1.3.zip"
+  "download": "https://github.com/MiskasMaps-FVTT/miskas-scene-utils/archive/0.1.4.zip"
 }
