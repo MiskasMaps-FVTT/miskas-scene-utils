@@ -1,13 +1,29 @@
-export function ladder(enter_height, exit_height) {
+/**
+ * Modes:
+ * ladder - change between heights if one matches
+ * roof   - elevate to top
+ * pit    - drop to bottom
+ */
+export function ladder(event, top, bottom, options = { mode: "ladder" }) {
 	const Token = event.data.token;
-	const Heights = [20, 0];
 
-
-	if (Token.elevation == Heights[0]) {
-	 Token.elevation = Heights[1];
-	  Token.update({ elevation: Token.elevation });
-	} else {
-	  Token.elevation = Heights[0];
-	  Token.update({ elevation: Token.elevation });
+	switch (options.mode) {
+		case "ladder":
+			if (Token.elevation == top) {
+				Token.update({ elevation: bottom });
+			} else if (Token.elevation == bottom) {
+				Token.update({ elevation: top });
+			}
+			break;
+		case "roof":
+			if (Token.elevation < top) {
+				Token.update({ elevation: top });
+			}
+			break;
+		case "pit":
+			if (Token.elevation > bottom) {
+				Token.update({ elevation: bottom });
+			}
+			break;
 	}
 }
