@@ -188,12 +188,23 @@ function generatePromptData(group, options) {
 function teleportTokens(currentRegion, targetRegion) {
 	for (const token of currentRegion.tokens) {
 		if (token.isOwner) {
-			token.update({
-				x: token.x - currentRegion.x + targetRegion.x,
-				y: token.y - currentRegion.y + targetRegion.y,
-			}, {
-				teleport: true,
-			});
+			if (game.release.generation >= 13) {
+				token.move({
+					x: token.x - currentRegion.shapes[0].x + targetRegion.shapes[0].x,
+					y: token.y - currentRegion.shapes[0].y + targetRegion.shapes[0].y,
+					action: "blink",
+				}, {
+					constrainOptions: { ignoreWalls: true },
+				});
+			} else {
+				/// V12 behavior depracated in V13, preserved for compatibility
+				token.update({
+					x: token.x - currentRegion.shapes[0].x + targetRegion.shapes[0].x,
+					y: token.y - currentRegion.shapes[0].y + targetRegion.shapes[0].y,
+				}, {
+					teleport: true,
+				});
+			}
 		}
 	}
 }
@@ -227,8 +238,8 @@ export async function prompt(
 		title: mode == "elevator"
 			? "Elevator"
 			: mode == "ladder"
-				? "Ladder"
-				: title,
+			? "Ladder"
+			: title,
 		content: content,
 		mode: mode || "elevator",
 		tokenOffset: tokenOffset,
